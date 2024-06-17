@@ -1271,7 +1271,7 @@ def pull(
             remote_location, config=r.get_config_stack(), **kwargs
         )
         fetch_result = client.fetch(
-            path, r, progress=errstream.write, determine_wants=determine_wants
+            path, r, progress=outstream.write, determine_wants=determine_wants
         )
         for lh, rh, force_ref in selected_refs:
             if not force_ref and rh in r.refs:
@@ -1980,7 +1980,7 @@ def _update_head_during_checkout_branch(repo, target):
     return checkout_target
 
 
-def checkout_branch(repo, target: Union[bytes, str], force: bool = False):
+def checkout_branch(repo, target: Union[bytes, str], force: bool = False, outstream=default_bytes_out_stream):
     """Switch branches or restore working tree files.
 
     The implementation of this function will probably not scale well
@@ -2034,6 +2034,7 @@ def checkout_branch(repo, target: Union[bytes, str], force: bool = False):
 
         dealt_with = set()
         repo_index = repo.open_index()
+        i = 0
         for entry in iter_tree_contents(repo.object_store, target_tree.id):
             dealt_with.add(entry.path)
             if entry.path in changes:
@@ -2043,28 +2044,38 @@ def checkout_branch(repo, target: Union[bytes, str], force: bool = False):
             ensure_dir_exists(os.path.dirname(full_path))
             st = build_file_from_blob(blob, entry.mode, full_path)
             repo_index[entry.path] = index_entry_from_stat(st, entry.sha)
+            i += 1
+            outstream.write(f'Updated target tree:{i}/{len(list(iter_tree_contents(repo.object_store, target_tree.id)))} {entry.path}')
 
         repo_index.write()
-
+        i = 0
         for entry in iter_tree_contents(repo.object_store, current_tree.id):
             if entry.path not in dealt_with:
                 repo.unstage([entry.path])
+            i += 1
+            outstream.write(f'Updated current tree:{i}/{len(list(iter_tree_contents(repo.object_store, current_tree.id)))} {entry.path}')
 
     # Remove the untracked files which are in the current_file_set.
     repo_index = repo.open_index()
+    i = 0
     for change in repo_index.changes_from_tree(repo.object_store, current_tree.id):
         path_change = change[0]
+        i += 1
         if path_change[1] is None:
             file_name = path_change[0]
             full_path = os.path.join(repo.path, file_name.decode())
             if os.path.isfile(full_path):
                 os.remove(full_path)
+                outstream.write(f'Remove the untracked files:{i}/{len(list(repo_index.changes_from_tree(repo.object_store, current_tree.id)))} {file_name}')
             dir_path = os.path.dirname(full_path)
             while dir_path != repo.path:
                 is_empty = len(os.listdir(dir_path)) == 0
                 if is_empty:
                     os.rmdir(dir_path)
                 dir_path = os.path.dirname(dir_path)
+        else:
+            outstream.write(f'Remove the untracked files:{i}/{len(list(repo_index.changes_from_tree(repo.object_store, current_tree.id)))}')
+
 
 
 def check_mailmap(repo, contact):
