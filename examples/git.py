@@ -2,10 +2,10 @@ import os
 import sys
 from io import RawIOBase
 from dulwich import porcelain
-from dulwich.client import get_transport_and_path
 from dulwich.porcelain import get_remote_repo
 from dulwich.repo import Repo
 from dulwich.walk import Walker
+import requests
 
 
 def ro():
@@ -45,6 +45,15 @@ def log(localRep):
         print()
 
 
+def __log__(localRep):
+    repo = Repo(localRep)
+    walker = Walker(repo, sorted(repo.get_refs().values(), reverse=True))
+    for entry in walker:
+        commit = entry.commit
+        return f"commit {commit.id.decode()}", f"Author: {commit.author.decode()} <{commit.author.decode()}>", \
+               f"Date: {commit.author_time}", f"    {commit.message.decode()}"
+
+
 def showChanges(localRep, outStream=sys.stdout):
     porcelain.show(localRep, outstream=outStream)
 
@@ -71,15 +80,34 @@ def pull(repo_path, progStream=None):
     porcelain.pull(repo_path, refspecs=porcelain.active_branch(repo_path), outstream=progStream)
 
 
+def reset(localRep):
+    repo = Repo(localRep)
+    head_ref = repo.head()
+    head_commit = repo[head_ref]
+    parent_commit = repo[head_commit.parents[0]]
+    porcelain.reset(repo, 'hard', parent_commit.tree)
+
+
+def recovery(localRep):
+    r = Repo(localRep)
+    porcelain.reset(r, 'hard')
+
+
+def clone(source, target=None, depth: int = None):
+    porcelain.clone(source, target, depth=depth)
+
+
 def isOnline(localRep):
     r = Repo(localRep)
     (remote_name, remote_location) = get_remote_repo(r, None)
-    client, path = get_transport_and_path(
-        remote_location, config=r.get_config_stack()
-    )
     try:
-        client.fetch(path, r)
-        return True
-    except Exception:
+        response = requests.get(remote_location)
+        if response.status_code == 200:
+            # print("Connection successful.")
+            return True
+        else:
+            # print(f"Connection failed with status code: {response.status}")
+            return False
+    except Exception as e:
+        # print(f"Connection failed: {e}")
         return False
-
