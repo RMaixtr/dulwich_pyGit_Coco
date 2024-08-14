@@ -74,10 +74,10 @@ def checkout(localRep, branch, progStream=None):
         porcelain.checkout_branch(r, 'origin/' + branch, outstream=progStream)
 
 
-def pull(repo_path, progStream=None):
+def pull(localRep, progStream=None, depth=3):
     if progStream is None:
         progStream = NoneStream()
-    porcelain.pull(repo_path, refspecs=porcelain.active_branch(repo_path), outstream=progStream)
+    porcelain.pull(localRep, refspecs=porcelain.active_branch(localRep), outstream=progStream, depth=depth)
 
 
 def reset(localRep):
@@ -111,3 +111,20 @@ def isOnline(localRep):
     except Exception as e:
         # print(f"Connection failed: {e}")
         return False
+    
+def swRemote(localRep, remote_url):
+    r = Repo(localRep)
+    porcelain.remote_remove(r,'origin')
+    porcelain.remote_add(r,'origin',remote_url)
+
+def swRemote_force(localRep, remote_url):
+    r = Repo(localRep)
+    porcelain.remote_remove(r,'origin')
+    porcelain.remote_add(r,'origin',remote_url)
+    porcelain.fetch(localRep)
+    porcelain.pull(localRep, refspecs=porcelain.active_branch(localRep), force=True)
+
+
+if __name__ == '__main__':
+    localrep = "/home/backup"
+    log(localrep)
