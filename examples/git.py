@@ -62,22 +62,27 @@ def activeBranch(localRep):
     return porcelain.active_branch(localRep)
 
 
-def checkout(localRep, branch, progStream=None):
+def checkout(localRep, branch, force=True, progStream=None):
     r = Repo(localRep)
     if progStream is None:
         progStream = NoneStream()
     try:
-        porcelain.checkout_branch(r, 'origin/' + branch, outstream=progStream)
+        porcelain.checkout_branch(r, 'origin/' + branch, force=True, outstream=progStream)
     except porcelain.CheckoutError as e:
         print("CheckoutError:", e)
-        porcelain.reset(r, 'hard')
-        porcelain.checkout_branch(r, 'origin/' + branch, outstream=progStream)
+        porcelain.fetch(localRep)
+        porcelain.checkout_branch(r, 'origin/' + branch, force=True, outstream=progStream)
 
-
+ 
 def pull(localRep, progStream=None, depth=3):
     if progStream is None:
         progStream = NoneStream()
-    porcelain.pull(localRep, refspecs=porcelain.active_branch(localRep), outstream=progStream, depth=depth)
+    try:
+        porcelain.pull(localRep, refspecs=porcelain.active_branch(localRep), force=True, outstream=progStream, depth=depth)
+    except porcelain.CheckoutError as e:
+        print("CheckoutError:", e)
+        porcelain.fetch(localRep)
+        porcelain.pull(localRep, refspecs=porcelain.active_branch(localRep), force=True, outstream=progStream, depth=depth)
 
 
 def reset(localRep):
