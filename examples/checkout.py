@@ -1,5 +1,6 @@
 localrep = "/home/backup"
-otaPath = "/root/preset/app/ota.py"
+remoteurl = 'https://git.cocorobo.cn/liushuai/CocoPi_upgrade.git'
+otaPath = 'ota.py'
 
 from maix import camera, display, image
 
@@ -21,6 +22,8 @@ class NewStream(RawIOBase):
 
 
 git.rw()
+
+git.swRemote(localrep, remoteurl)
 steam = NewStream()
 
 if git.activeBranch(localrep) != b'zh':
