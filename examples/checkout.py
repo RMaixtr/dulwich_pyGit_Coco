@@ -1,6 +1,6 @@
 localrep = "/home/backup"
 remoteurl = 'https://git.cocorobo.cn/liushuai/CocoPi_upgrade.git'
-otaPath = 'ota.py'
+otaPath = "/root/preset/app/ota.py"
 
 from maix import camera, display, image
 
