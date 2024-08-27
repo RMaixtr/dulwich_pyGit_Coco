@@ -119,13 +119,14 @@ def isOnline(localRep):
     
 def swRemote(localRep, remote_url):
     r = Repo(localRep)
-    porcelain.remote_remove(r,'origin')
-    porcelain.remote_add(r,'origin',remote_url)
+    try:
+        porcelain.remote_remove(r,'origin')
+        porcelain.remote_add(r,'origin',remote_url)
+    except:
+        porcelain.remote_add(r,'origin',remote_url)
 
 def swRemote_force(localRep, remote_url):
-    r = Repo(localRep)
-    porcelain.remote_remove(r,'origin')
-    porcelain.remote_add(r,'origin',remote_url)
+    swRemote(localRep, remote_url)
     porcelain.fetch(localRep)
     porcelain.pull(localRep, refspecs=porcelain.active_branch(localRep), force=True)
 
