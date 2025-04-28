@@ -1238,6 +1238,7 @@ def pull(
     errstream=default_bytes_err_stream,
     fast_forward=True,
     force=False,
+    depth=None,
     **kwargs,
 ):
     """Pull from remote via dulwich.client.
@@ -1271,7 +1272,7 @@ def pull(
             remote_location, config=r.get_config_stack(), **kwargs
         )
         fetch_result = client.fetch(
-            path, r, progress=outstream.write, determine_wants=determine_wants
+            path, r, progress=outstream.write, determine_wants=determine_wants, depth=depth
         )
         for lh, rh, force_ref in selected_refs:
             if not force_ref and rh in r.refs:
